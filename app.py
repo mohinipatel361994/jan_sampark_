@@ -40,13 +40,11 @@ def fetch_articles():
 def make_clickable(val):
     return f'<a href="{val}" target="_blank">{val[:30]}...</a>'  # Truncate long URLs for better display
 
-
 # Display the logo without resizing
 with st.container():
     col1, col2, col3 = st.columns([0.2, 0.6, 0.2], gap="small")
     
     with col1:
-        # Bottom align and center the logo using flexbox
         st.markdown('<div style="display: flex; align-items: flex-end; justify-content: bottom; height: 180%;">', unsafe_allow_html=True)
         logo_image = Image.open('image/jansampark-ribbon.jfif')
         st.image(logo_image, use_column_width='auto')
@@ -76,7 +74,7 @@ def add_bg_from_local(image_file, opacity=0):
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            height: 100vh; /* Ensure full height */
+            height: 100vh;
         }}
         </style>
         """,
@@ -85,8 +83,8 @@ def add_bg_from_local(image_file, opacity=0):
 
 
 # Call the function with your image path
-add_bg_from_local('image/grey_bg.jfif')  # Adjust path to your image file        
-# Title and description with styling for background and ribbon
+add_bg_from_local('image/grey_bg.jfif')  
+
 st.markdown(
     """
     <style>
@@ -100,7 +98,7 @@ st.markdown(
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            z-index: 1000;  /* Ensure it is on top of other elements */
+            z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -110,27 +108,19 @@ st.markdown(
             font-style: italic;
             font-size: 14px;
             margin: 0;
-            flex: 1 1 50%;  /* Flex-grow, flex-shrink, flex-basis */
-        }
-        @media (max-width: 600px) {
-            .footer p {
-                flex-basis: 100%;
-                text-align: center;
-                padding-top: 10px;
-            }
+            flex: 1 1 50%;
         }
         .content {
-            padding: 10px; /* Add padding to main content area */
-            margin-top: 20px; /* Add space above content to separate from ribbon */
+            padding: 10px;
+            margin-top: 20px;
         }
-        /* New Styles */
         .title {
-            margin-bottom: 30px; /* More space below the title */
-            word-wrap: break-word; /* Allow title to wrap */
+            margin-bottom: 30px;
+            word-wrap: break-word;
         }
         .dataframe td {
-            max-width: 600px; /* Adjust the column width for titles */
-            white-space: normal; /* Allow wrapping */
+            max-width: 600px;
+            white-space: normal;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -151,11 +141,26 @@ st.markdown("""You can view the fetched articles, filter them based on sentiment
 # Main section for filters
 st.header("Filter Articles")
 sentiment_filter = st.multiselect("Sentiment", ["Positive", "Neutral", "Negative","Sensitive"], default=["Positive", "Neutral", "Negative","Sensitive"])
-# date_filter = st.date_input("Date Range", [datetime.now()])
 
 # Button to fetch articles
 if st.button("Fetch Latest News"):
     articles_df = fetch_articles()
+
+
+    # Count total articles and by sentiment
+    total_count = len(articles_df)
+    sentiment_counts = articles_df['Sentiment'].value_counts().to_dict()
+
+    # Fill in missing sentiment categories with 0
+    for sentiment in ["Positive", "Neutral", "Negative", "Sensitive"]:
+        if sentiment not in sentiment_counts:
+            sentiment_counts[sentiment] = 0
+
+    # Create a summary DataFrame
+    summary_df = pd.DataFrame({
+        'Sentiment': ['Total', 'Positive', 'Neutral', 'Negative', 'Sensitive'],
+        'Count': [total_count, sentiment_counts['Positive'], sentiment_counts['Neutral'], sentiment_counts['Negative'], sentiment_counts['Sensitive']]
+    })
 
     # Apply filters
     filtered_df = articles_df[articles_df['Sentiment'].isin(sentiment_filter)]
@@ -177,7 +182,12 @@ if st.button("Fetch Latest News"):
     # Button to download the filtered articles data
     csv = filtered_df.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download data as CSV", data=csv, file_name="filtered_articles.csv", mime='text/csv')
-
+    
+     # Create summary table for sentiment counts
+    st.subheader("Sentiment Summary")
+   
+    # Display the sentiment summary table
+    st.table(summary_df)
 # Footer
 footer = """
     <div class="footer">
